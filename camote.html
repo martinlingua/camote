@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditor de Márgenes · Feria Guaymallén</title>
+<style>
+  :root{
+    --verde:#2f6b3d; --verde-claro:#e8f1ea; --ambar:#d99400; --ambar-claro:#fbf1dc;
+    --fondo:#f7f6f2; --papel:#ffffff; --texto:#2a2a28; --gris:#7a786e; --gris-claro:#e6e4dd;
+    --rojo:#b5482f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Ubuntu, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:var(--fondo);color:var(--texto);line-height:1.45;font-size:15px}
+  header{background:var(--verde);color:#fff;padding:14px 16px;position:sticky;top:0;z-index:20}
+  header h1{font-size:17px;font-weight:700;letter-spacing:.2px}
+  header p{font-size:12px;opacity:.85;margin-top:2px}
+  nav{display:flex;gap:4px;overflow-x:auto;background:var(--papel);border-bottom:1px solid var(--gris-claro);
+    position:sticky;top:0;z-index:15;-webkit-overflow-scrolling:touch}
+  nav button{flex:0 0 auto;background:none;border:none;padding:12px 14px;font-size:14px;font-weight:600;
+    color:var(--gris);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;font-family:inherit}
+  nav button.activo{color:var(--verde);border-bottom-color:var(--verde)}
+  main{padding:16px;max-width:1000px;margin:0 auto}
+  .tab{display:none}
+  .tab.activo{display:block}
+  h2{font-size:16px;margin-bottom:4px;color:var(--verde)}
+  .sub{font-size:13px;color:var(--gris);margin-bottom:14px}
+  .card{background:var(--papel);border:1px solid var(--gris-claro);border-radius:10px;padding:14px;margin-bottom:14px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--gris-claro);border-radius:8px;font-size:15px;
+    font-family:inherit;background:#fff;color:var(--texto)}
+  input:focus,select:focus{outline:2px solid var(--verde-claro);border-color:var(--verde)}
+  .fila{display:grid;gap:10px;margin-bottom:10px}
+  .fila.dos{grid-template-columns:1fr 1fr}
+  .fila.tres{grid-template-columns:2fr 1fr 1fr}
+  @media(max-width:560px){.fila.tres{grid-template-columns:1fr}.fila.dos{grid-template-columns:1fr}}
+  button.accion{background:var(--verde);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;
+    font-weight:600;cursor:pointer;font-family:inherit}
+  button.accion:active{opacity:.85}
+  button.sec{background:var(--papel);color:var(--verde);border:1px solid var(--verde)}
+  button.mini{padding:4px 9px;font-size:12px;border-radius:6px;background:none;border:1px solid var(--gris-claro);
+    color:var(--gris);cursor:pointer;font-family:inherit}
+  button.mini.del{color:var(--rojo);border-color:#e7c9c1}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--gris-claro);white-space:nowrap}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--gris);font-weight:700;background:#faf9f6}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:none}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .pill.staple{background:var(--verde-claro);color:var(--verde)}
+  .pill.delicada{background:#f6e3de;color:var(--rojo)}
+  .pill.fruta{background:var(--ambar-claro);color:var(--ambar)}
+  .pill.seco{background:#e9e6f2;color:#5a4b8a}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--papel);border:1px solid var(--gris-claro);border-radius:10px;padding:12px}
+  .kpi .v{font-size:22px;font-weight:700;color:var(--verde)}
+  .kpi.ambar .v{color:var(--ambar)}
+  .kpi .l{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+  .aviso{background:var(--ambar-claro);border:1px solid #ecd7a0;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:12px;color:#6b5200}
+  .vacio{text-align:center;color:var(--gris);padding:26px 10px;font-size:14px}
+  .badge{font-weight:700}
+  .badge.alto{color:var(--verde)} .badge.medio{color:var(--ambar)} .badge.bajo{color:var(--rojo)}
+  .row-act{display:flex;gap:6px;justify-content:flex-end}
+  details summary{cursor:pointer;font-size:13px;color:var(--verde);font-weight:600;padding:6px 0}
+  .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .hint{font-size:12px;color:var(--gris);margin-top:4px}
+  footer{padding:20px 16px;text-align:center;font-size:11px;color:var(--gris)}
+  /* LOGIN */
+  #login-overlay{position:fixed;inset:0;background:var(--fondo);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login-card{background:var(--papel);border:1px solid var(--gris-claro);border-radius:14px;padding:26px 22px;max-width:360px;width:100%}
+  .login-card h1{color:var(--verde);font-size:20px;margin-bottom:4px}
+  .login-card p{font-size:13px;color:var(--gris);margin-bottom:18px}
+  .login-card label{margin-top:10px}
+  .login-card .accion{width:100%;margin-top:16px;padding:12px}
+  .login-card .link{background:none;border:none;color:var(--verde);font-weight:600;cursor:pointer;font-family:inherit;font-size:13px;margin-top:12px;width:100%}
+  #login-error{color:var(--rojo);font-size:13px;margin-top:10px;min-height:18px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay" style="display:none">
+  <div class="login-card">
+    <h1>Auditor de Márgenes</h1>
+    <p id="login-modo-txt">Entrá con tu cuenta para sincronizar entre el celular y la compu.</p>
+    <label>Email</label>
+    <input id="login-email" type="email" autocomplete="username" placeholder="tu@email.com">
+    <label>Contraseña</label>
+    <input id="login-pass" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres">
+    <div id="login-error"></div>
+    <button class="accion" id="btn-entrar" onclick="entrar()">Entrar</button>
+    <button class="link" id="btn-toggle" onclick="toggleModo()">¿Primera vez? Crear cuenta</button>
+  </div>
+</div>
+
+<header>
+  <h1>Auditor de Márgenes</h1>
+  <p>Relevá precios de la competencia contra la feria de Guaymallén</p>
+</header>
+<nav id="nav"></nav>
+<main>
+  <!-- FERIA -->
+  <section class="tab" id="tab-feria">
+    <h2>Feria (costo mayorista)</h2>
+    <p class="sub">Tu catálogo maestro. Cada producto se carga una vez con su precio de feria. Todo lo demás se engancha acá.</p>
+    <div class="card">
+      <div class="fila tres">
+        <div><label>Producto</label><input id="p-nombre" placeholder="Ej: Manzana Red comun"></div>
+        <div><label>Categoría</label>
+          <select id="p-cat">
+            <option value="staple">Staple (papa, cebolla)</option>
+            <option value="fruta">Fruta media (manzana, cítrico)</option>
+            <option value="delicada">Delicada (hoja verde, fruta madura)</option>
+            <option value="seco">Seco / Anexo (aceite, nuez, conserva)</option>
+          </select>
+        </div>
+        <div><label>Unidad</label>
+          <select id="p-unidad"><option>kg</option><option>unidad</option><option>atado</option><option>docena</option><option>litro</option></select>
+        </div>
+      </div>
+      <div class="fila dos">
+        <div><label>Precio feria ($)</label><input id="p-feria" type="number" inputmode="decimal" placeholder="0"></div>
+        <div style="display:flex;align-items:flex-end"><button class="accion" onclick="addProducto()" style="width:100%">Agregar producto</button></div>
+      </div>
+    </div>
+    <div class="card scroll" id="lista-feria"></div>
+  </section>
+
+  <!-- COMERCIOS -->
+  <section class="tab" id="tab-comercios">
+    <h2>Comercios a auditar</h2>
+    <p class="sub">Las verdulerías, fruit shops o súper que querés comparar.</p>
+    <div class="card">
+      <div class="fila tres">
+        <div><label>Nombre</label><input id="c-nombre" placeholder="Ej: Verduleria centro"></div>
+        <div><label>Tipo</label>
+          <select id="c-tipo"><option>Verdulería</option><option>Fruit shop</option><option>Supermercado</option><option>Almacén</option></select>
+        </div>
+        <div><label>Zona / nota</label><input id="c-nota" placeholder="Ej: Peatonal Sarmiento"></div>
+      </div>
+      <button class="accion" onclick="addComercio()">Agregar comercio</button>
+    </div>
+    <div class="card scroll" id="lista-comercios"></div>
+  </section>
+
+  <!-- RELEVAMIENTO -->
+  <section class="tab" id="tab-relev">
+    <h2>Relevamiento</h2>
+    <p class="sub">Elegí un comercio y cargá los precios que viste. Dejá vacío lo que no releves.</p>
+    <div class="card">
+      <div class="fila dos">
+        <div><label>Comercio</label><select id="r-comercio" onchange="renderRelevGrid()"></select></div>
+        <div><label>Fecha</label><input id="r-fecha" type="date"></div>
+      </div>
+      <div id="relev-grid"></div>
+      <div style="margin-top:12px"><button class="accion" onclick="guardarRelev()">Guardar precios</button></div>
+    </div>
+  </section>
+
+  <!-- ANALISIS -->
+  <section class="tab" id="tab-analisis">
+    <h2>Márgenes que maneja la zona</h2>
+    <p class="sub">Markup = precio del comercio ÷ precio de feria − 1. Es el techo que el mercado acepta, no su rentabilidad real.</p>
+
+    <details class="card" style="padding:12px 14px">
+      <summary>Mi objetivo (para la columna "mi precio sugerido")</summary>
+      <div class="config-grid" style="margin-top:10px">
+        <div><label>Merma objetivo (%)</label><input id="cfg-merma" type="number" inputmode="decimal" oninput="saveCfg();renderAnalisis()"><div class="hint">Ej: 12 = 12% de merma</div></div>
+        <div><label>Margen s/venta objetivo (%)</label><input id="cfg-margen" type="number" inputmode="decimal" oninput="saveCfg();renderAnalisis()"><div class="hint">Ej: 42 = 42% sobre venta</div></div>
+      </div>
+      <div class="hint" style="margin-top:8px">Fórmula: Precio = Costo ÷ (1 − merma) ÷ (1 − margen)</div>
+    </details>
+
+    <div class="kpis" id="kpis"></div>
+    <div id="aviso-feria"></div>
+
+    <h2 style="margin-top:6px">Por producto</h2>
+    <div class="card scroll" id="tabla-productos"></div>
+
+    <h2>Por comercio</h2>
+    <p class="sub">El markup promedio que maneja cada negocio, sobre los productos que le relevaste.</p>
+    <div class="card scroll" id="tabla-comercios"></div>
+
+    <button class="sec accion" onclick="exportCSV()">Descargar análisis (CSV)</button>
+  </section>
+
+  <!-- DATOS -->
+  <section class="tab" id="tab-datos">
+    <h2>Datos y cuenta</h2>
+    <div class="card">
+      <label>Sesión</label>
+      <p style="font-size:14px;margin-bottom:10px">Conectado como <strong id="user-email">—</strong></p>
+      <button class="mini" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+    <div class="card">
+      <label>Respaldo manual</label>
+      <div class="fila dos" style="margin-top:6px">
+        <button class="accion" onclick="exportJSON()">Exportar respaldo (JSON)</button>
+        <button class="sec accion" onclick="document.getElementById('importar').click()">Importar respaldo</button>
+      </div>
+      <input type="file" id="importar" accept=".json" style="display:none" onchange="importJSON(event)">
+    </div>
+    <div class="card">
+      <label>Zona de riesgo</label>
+      <button class="mini del" onclick="borrarTodo()">Borrar TODOS los datos</button>
+    </div>
+    <div class="aviso" style="margin-top:4px">
+      Los datos se guardan en la nube (Firestore) bajo tu cuenta, y también una copia local en este dispositivo para que funcione sin internet en la feria. Al recuperar señal, se sincroniza solo.
+    </div>
+  </section>
+</main>
+<footer>Auditor de Márgenes · Firebase + local · v2</footer>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+"use strict";
+
+/* ============ FIREBASE ============ */
+var firebaseConfig = {
+  apiKey: "AIzaSyAGh_vS9VzpCIkMZbWR9lByslcyiPOu0cw",
+  authDomain: "auditor-verduleria.firebaseapp.com",
+  projectId: "auditor-verduleria",
+  storageBucket: "auditor-verduleria.firebasestorage.app",
+  messagingSenderId: "972395524906",
+  appId: "1:972395524906:web:9560afc9c90c84ecef2453"
+};
+var auth=null, db=null, currentUid=null, docRef=null, unsub=null, lastWritten=null, modoCrear=false;
+
+/* ============ ESTADO ============ */
+var CATS = {
+  staple:{label:"Staple", cls:"staple"},
+  fruta:{label:"Fruta media", cls:"fruta"},
+  delicada:{label:"Delicada", cls:"delicada"},
+  seco:{label:"Seco/Anexo", cls:"seco"}
+};
+
+var state = loadLocal() || seed();
+
+/* ---- Persistencia local (cache offline) ---- */
+function loadLocal(){
+  try {
+    var raw = localStorage.getItem("auditor_margenes_v2");
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+function save(){
+  try { localStorage.setItem("auditor_margenes_v2", JSON.stringify(state)); } catch(e){}
+  cloudSave();
+}
+
+/* ---- Persistencia nube (Firestore) ---- */
+function cloudSave(){
+  if(!docRef) return;
+  var payload = JSON.stringify(state);
+  lastWritten = payload;
+  docRef.set({ data: payload, updated_at: firebase.firestore.FieldValue.serverTimestamp() })
+    .catch(function(e){ console.warn("cloud save:", e && e.code); });
+}
+function startSync(){
+  if(!currentUid || !db) return;
+  docRef = db.collection("estado").doc(currentUid);
+  if(unsub){ unsub(); }
+  unsub = docRef.onSnapshot(function(snap){
+    if(!snap.exists){ cloudSave(); return; }
+    var d = snap.data();
+    if(d && d.data && d.data !== lastWritten){
+      try { state = JSON.parse(d.data); lastWritten = d.data; renderAll(); } catch(e){}
+    }
+  }, function(err){ console.warn("snapshot:", err && err.code); });
+}
+
+/* ============ AUTH ============ */
+function initAuth(){
+  try { firebase.initializeApp(firebaseConfig); }
+  catch(e){ console.warn("init:", e); }
+  auth = firebase.auth();
+  db = firebase.firestore();
+  try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(e){}
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      currentUid = user.uid;
+      document.getElementById("login-overlay").style.display = "none";
+      document.getElementById("user-email").textContent = user.email || "—";
+      startSync();
+    } else {
+      currentUid = null; docRef = null;
+      if(unsub){ unsub(); unsub = null; }
+      document.getElementById("login-overlay").style.display = "flex";
+    }
+  });
+}
+function toggleModo(){
+  modoCrear = !modoCrear;
+  document.getElementById("btn-entrar").textContent = modoCrear ? "Crear cuenta" : "Entrar";
+  document.getElementById("btn-entrar").setAttribute("onclick", modoCrear ? "crearCuenta()" : "entrar()");
+  document.getElementById("btn-toggle").textContent = modoCrear ? "Ya tengo cuenta, entrar" : "¿Primera vez? Crear cuenta";
+  document.getElementById("login-modo-txt").textContent = modoCrear
+    ? "Creá una cuenta. Usá el mismo email y contraseña en todos tus dispositivos."
+    : "Entrá con tu cuenta para sincronizar entre el celular y la compu.";
+  authErr("");
+}
+function entrar(){
+  var e=document.getElementById("login-email").value.trim();
+  var p=document.getElementById("login-pass").value;
+  authErr("");
+  auth.signInWithEmailAndPassword(e,p).catch(function(err){ authErr(traducirAuth(err.code)); });
+}
+function crearCuenta(){
+  var e=document.getElementById("login-email").value.trim();
+  var p=document.getElementById("login-pass").value;
+  authErr("");
+  if(p.length<6){ authErr("La contraseña necesita al menos 6 caracteres."); return; }
+  auth.createUserWithEmailAndPassword(e,p).catch(function(err){ authErr(traducirAuth(err.code)); });
+}
+function cerrarSesion(){ if(auth) auth.signOut(); }
+function authErr(m){ document.getElementById("login-error").textContent = m; }
+function traducirAuth(code){
+  var map={
+    "auth/invalid-email":"Email inválido.",
+    "auth/user-not-found":"No existe esa cuenta. Toca 'Crear cuenta'.",
+    "auth/wrong-password":"Contraseña incorrecta.",
+    "auth/invalid-credential":"Email o contraseña incorrectos.",
+    "auth/email-already-in-use":"Ese email ya tiene cuenta. Toca 'Entrar'.",
+    "auth/weak-password":"Contraseña muy débil (mínimo 6).",
+    "auth/network-request-failed":"Sin conexión a internet.",
+    "auth/operation-not-allowed":"Falta habilitar Email/Contraseña en la consola de Firebase."
+  };
+  return map[code] || ("Error: "+code);
+}
+
+/* ============ SEED ============ */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function seed(){
+  var pManzana=uid(),pLechuga=uid(),pPapa=uid(),pTomate=uid(),pAceite=uid(),pNuez=uid(),pAjo=uid();
+  var cVerd=uid(),cFruit=uid();
+  var hoy=new Date().toISOString().slice(0,10);
+  return {
+    productos:[
+      {id:pManzana,nombre:"Manzana Red (demo)",cat:"fruta",unidad:"kg",feria:800},
+      {id:pLechuga,nombre:"Lechuga mantecosa (demo)",cat:"delicada",unidad:"unidad",feria:600},
+      {id:pPapa,nombre:"Papa (demo)",cat:"staple",unidad:"kg",feria:450},
+      {id:pTomate,nombre:"Tomate redondo (demo)",cat:"delicada",unidad:"kg",feria:1100},
+      {id:pAceite,nombre:"Aceite oliva 500ml (demo)",cat:"seco",unidad:"unidad",feria:4500},
+      {id:pNuez,nombre:"Nuez mariposa (demo)",cat:"seco",unidad:"kg",feria:9000},
+      {id:pAjo,nombre:"Ajo negro 100g (demo)",cat:"seco",unidad:"unidad",feria:3200}
+    ],
+    comercios:[
+      {id:cVerd,nombre:"Verdulería centro (demo)",tipo:"Verdulería",nota:"Peatonal"},
+      {id:cFruit,nombre:"Fruit shop (demo)",tipo:"Fruit shop",nota:"Local premium"}
+    ],
+    relevamientos:[
+      {id:uid(),comercioId:cVerd,productoId:pManzana,precio:1500,fecha:hoy},
+      {id:uid(),comercioId:cVerd,productoId:pLechuga,precio:1300,fecha:hoy},
+      {id:uid(),comercioId:cVerd,productoId:pPapa,precio:800,fecha:hoy},
+      {id:uid(),comercioId:cVerd,productoId:pTomate,precio:2200,fecha:hoy},
+      {id:uid(),comercioId:cFruit,productoId:pManzana,precio:1800,fecha:hoy},
+      {id:uid(),comercioId:cFruit,productoId:pTomate,precio:2600,fecha:hoy},
+      {id:uid(),comercioId:cFruit,productoId:pAceite,precio:7900,fecha:hoy},
+      {id:uid(),comercioId:cFruit,productoId:pNuez,precio:16500,fecha:hoy}
+    ],
+    cfg:{merma:12, margen:42}
+  };
+}
+
+/* ============ FORMATO ============ */
+var nf = new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0});
+function money(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : nf.format(n); }
+function pct(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : (n*100).toFixed(1)+"%"; }
+function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+
+/* ============ NAV ============ */
+var TABS=[["feria","Feria"],["comercios","Comercios"],["relev","Relevar"],["analisis","Márgenes"],["datos","Datos"]];
+function buildNav(){
+  var n=document.getElementById("nav"); n.innerHTML="";
+  TABS.forEach(function(t,i){
+    var b=document.createElement("button");
+    b.textContent=t[1]; b.dataset.tab=t[0];
+    b.onclick=function(){ go(t[0]); };
+    if(i===0) b.className="activo";
+    n.appendChild(b);
+  });
+}
+function go(tab){
+  document.querySelectorAll(".tab").forEach(function(s){s.classList.remove("activo");});
+  document.getElementById("tab-"+tab).classList.add("activo");
+  document.querySelectorAll("#nav button").forEach(function(b){b.classList.toggle("activo", b.dataset.tab===tab);});
+  if(tab==="relev"){ fillComercioSelect(); renderRelevGrid(); }
+  if(tab==="analisis"){ renderAnalisis(); }
+  window.scrollTo(0,0);
+}
+
+/* ============ PRODUCTOS (FERIA) ============ */
+function addProducto(){
+  var nombre=document.getElementById("p-nombre").value.trim();
+  var feria=parseFloat(document.getElementById("p-feria").value);
+  if(!nombre){ alert("Poné un nombre de producto."); return; }
+  state.productos.push({
+    id:uid(), nombre:nombre,
+    cat:document.getElementById("p-cat").value,
+    unidad:document.getElementById("p-unidad").value,
+    feria:isNaN(feria)?0:feria
+  });
+  document.getElementById("p-nombre").value="";
+  document.getElementById("p-feria").value="";
+  save(); renderFeria();
+}
+function editFeria(id,val){
+  var p=state.productos.find(function(x){return x.id===id;});
+  if(p){ p.feria=parseFloat(val)||0; save(); }
+}
+function delProducto(id){
+  if(!confirm("Borrar este producto y sus relevamientos?")) return;
+  state.productos=state.productos.filter(function(x){return x.id!==id;});
+  state.relevamientos=state.relevamientos.filter(function(x){return x.productoId!==id;});
+  save(); renderFeria();
+}
+function renderFeria(){
+  var c=document.getElementById("lista-feria");
+  if(!state.productos.length){ c.innerHTML='<div class="vacio">Todavía no cargaste productos.</div>'; return; }
+  var rows=state.productos.map(function(p){
+    var cat=CATS[p.cat]||CATS.staple;
+    return '<tr>'+
+      '<td>'+esc(p.nombre)+'</td>'+
+      '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
+      '<td>'+esc(p.unidad)+'</td>'+
+      '<td class="num"><input type="number" inputmode="decimal" value="'+(p.feria||"")+'" style="width:100px;text-align:right" onchange="editFeria(\''+p.id+'\',this.value)"></td>'+
+      '<td class="row-act"><button class="mini del" onclick="delProducto(\''+p.id+'\')">Borrar</button></td>'+
+    '</tr>';
+  }).join("");
+  c.innerHTML='<table><thead><tr><th>Producto</th><th>Categoría</th><th>Unidad</th><th class="num">Feria ($)</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+/* ============ COMERCIOS ============ */
+function addComercio(){
+  var nombre=document.getElementById("c-nombre").value.trim();
+  if(!nombre){ alert("Poné un nombre de comercio."); return; }
+  state.comercios.push({id:uid(),nombre:nombre,tipo:document.getElementById("c-tipo").value,nota:document.getElementById("c-nota").value.trim()});
+  document.getElementById("c-nombre").value=""; document.getElementById("c-nota").value="";
+  save(); renderComercios();
+}
+function delComercio(id){
+  if(!confirm("Borrar este comercio y sus relevamientos?")) return;
+  state.comercios=state.comercios.filter(function(x){return x.id!==id;});
+  state.relevamientos=state.relevamientos.filter(function(x){return x.comercioId!==id;});
+  save(); renderComercios();
+}
+function renderComercios(){
+  var c=document.getElementById("lista-comercios");
+  if(!state.comercios.length){ c.innerHTML='<div class="vacio">Todavía no cargaste comercios.</div>'; return; }
+  var rows=state.comercios.map(function(co){
+    var n=state.relevamientos.filter(function(r){return r.comercioId===co.id;}).length;
+    return '<tr><td>'+esc(co.nombre)+'</td><td>'+esc(co.tipo)+'</td><td>'+esc(co.nota||"—")+'</td><td class="num">'+n+'</td>'+
+      '<td class="row-act"><button class="mini del" onclick="delComercio(\''+co.id+'\')">Borrar</button></td></tr>';
+  }).join("");
+  c.innerHTML='<table><thead><tr><th>Comercio</th><th>Tipo</th><th>Zona/nota</th><th class="num">Precios</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+/* ============ RELEVAMIENTO ============ */
+function fillComercioSelect(){
+  var s=document.getElementById("r-comercio");
+  var prev=s.value;
+  s.innerHTML=state.comercios.map(function(c){return '<option value="'+c.id+'">'+esc(c.nombre)+'</option>';}).join("");
+  if(prev) s.value=prev;
+  var f=document.getElementById("r-fecha");
+  if(!f.value) f.value=new Date().toISOString().slice(0,10);
+}
+function renderRelevGrid(){
+  var g=document.getElementById("relev-grid");
+  var comId=document.getElementById("r-comercio").value;
+  if(!state.comercios.length){ g.innerHTML='<div class="vacio">Primero cargá comercios.</div>'; return; }
+  if(!state.productos.length){ g.innerHTML='<div class="vacio">Primero cargá productos en la pestaña Feria.</div>'; return; }
+  var rows=state.productos.map(function(p){
+    var existente=state.relevamientos.filter(function(r){return r.comercioId===comId && r.productoId===p.id;})
+      .sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"");})[0];
+    var val=existente?existente.precio:"";
+    var cat=CATS[p.cat]||CATS.staple;
+    return '<tr><td>'+esc(p.nombre)+' <span class="pill '+cat.cls+'" style="margin-left:4px">'+cat.label+'</span></td>'+
+      '<td class="num" style="color:var(--gris)">'+money(p.feria)+'</td>'+
+      '<td class="num"><input type="number" inputmode="decimal" data-prod="'+p.id+'" value="'+val+'" placeholder="precio" style="width:110px;text-align:right"></td></tr>';
+  }).join("");
+  g.innerHTML='<div class="scroll"><table><thead><tr><th>Producto</th><th class="num">Feria</th><th class="num">Precio comercio</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function guardarRelev(){
+  var comId=document.getElementById("r-comercio").value;
+  var fecha=document.getElementById("r-fecha").value || new Date().toISOString().slice(0,10);
+  if(!comId){ alert("Elegí un comercio."); return; }
+  var inputs=document.querySelectorAll("#relev-grid input[data-prod]");
+  var n=0;
+  inputs.forEach(function(inp){
+    var prodId=inp.dataset.prod;
+    var v=parseFloat(inp.value);
+    state.relevamientos=state.relevamientos.filter(function(r){
+      return !(r.comercioId===comId && r.productoId===prodId && r.fecha===fecha);
+    });
+    if(!isNaN(v) && v>0){
+      state.relevamientos.push({id:uid(),comercioId:comId,productoId:prodId,precio:v,fecha:fecha});
+      n++;
+    }
+  });
+  save();
+  alert(n+" precio(s) guardado(s).");
+}
+
+/* ============ ANALISIS ============ */
+function saveCfg(){
+  state.cfg.merma=parseFloat(document.getElementById("cfg-merma").value)||0;
+  state.cfg.margen=parseFloat(document.getElementById("cfg-margen").value)||0;
+  save();
+}
+function markupBadge(m){
+  if(m===null||isNaN(m)) return "—";
+  var cls = m>=0.9 ? "alto" : (m>=0.5 ? "medio" : "bajo");
+  return '<span class="badge '+cls+'">'+pct(m)+'</span>';
+}
+function latestPrecio(comId,prodId){
+  var rs=state.relevamientos.filter(function(r){return r.comercioId===comId&&r.productoId===prodId;})
+    .sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"");});
+  return rs.length?rs[0].precio:null;
+}
+function renderAnalisis(){
+  document.getElementById("cfg-merma").value=state.cfg.merma;
+  document.getElementById("cfg-margen").value=state.cfg.margen;
+  var merma=(state.cfg.merma||0)/100, margen=(state.cfg.margen||0)/100;
+
+  var sinFeria=0;
+  var allMarkups=[];
+  var prodRows=state.productos.map(function(p){
+    var precios=state.comercios.map(function(c){return latestPrecio(c.id,p.id);}).filter(function(x){return x!==null;});
+    var markups=[];
+    if(p.feria>0){
+      precios.forEach(function(pr){ markups.push(pr/p.feria-1); });
+    } else if(precios.length){ sinFeria++; }
+    markups.forEach(function(m){allMarkups.push(m);});
+    var avgMk = markups.length? markups.reduce(function(a,b){return a+b;},0)/markups.length : null;
+    var minMk = markups.length? Math.min.apply(null,markups):null;
+    var maxMk = markups.length? Math.max.apply(null,markups):null;
+    var sug = (p.feria>0 && merma<1 && margen<1) ? p.feria/(1-merma)/(1-margen) : null;
+    var miMk = (sug && p.feria>0) ? sug/p.feria-1 : null;
+    var cat=CATS[p.cat]||CATS.staple;
+    return '<tr>'+
+        '<td>'+esc(p.nombre)+'</td>'+
+        '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
+        '<td class="num">'+money(p.feria)+'</td>'+
+        '<td class="num">'+markupBadge(avgMk)+'</td>'+
+        '<td class="num" style="color:var(--gris)">'+(minMk!==null?pct(minMk)+" – "+pct(maxMk):"—")+'</td>'+
+        '<td class="num">'+money(sug)+'</td>'+
+        '<td class="num">'+(miMk!==null?pct(miMk):"—")+'</td>'+
+      '</tr>';
+  });
+
+  var avgZona = allMarkups.length? allMarkups.reduce(function(a,b){return a+b;},0)/allMarkups.length : null;
+  var avgMargenZona = allMarkups.length? allMarkups.reduce(function(a,b){return a+(b/(1+b));},0)/allMarkups.length : null;
+  document.getElementById("kpis").innerHTML=
+    kpi(pct(avgZona),"Markup prom. zona")+
+    kpi(pct(avgMargenZona),"Margen prom. zona","ambar")+
+    kpi(state.productos.length,"Productos")+
+    kpi(state.comercios.length,"Comercios");
+
+  document.getElementById("aviso-feria").innerHTML = sinFeria?
+    '<div class="aviso">'+sinFeria+' producto(s) tienen precio de comercio pero les falta el precio de feria: no se les puede calcular markup. Cargalo en la pestaña Feria.</div>':"";
+
+  document.getElementById("tabla-productos").innerHTML = state.productos.length?
+    '<table><thead><tr><th>Producto</th><th>Cat.</th><th class="num">Feria</th><th class="num">Markup zona</th><th class="num">Rango</th><th class="num">Mi sugerido</th><th class="num">Mi markup</th></tr></thead><tbody>'+
+    prodRows.join("")+'</tbody></table>'
+    : '<div class="vacio">Cargá productos y relevamientos para ver el análisis.</div>';
+
+  var comRows=state.comercios.map(function(c){
+    var mks=[];
+    state.productos.forEach(function(p){
+      if(p.feria>0){
+        var pr=latestPrecio(c.id,p.id);
+        if(pr!==null) mks.push(pr/p.feria-1);
+      }
+    });
+    var avg=mks.length?mks.reduce(function(a,b){return a+b;},0)/mks.length:null;
+    var avgMg=mks.length?mks.reduce(function(a,b){return a+(b/(1+b));},0)/mks.length:null;
+    return '<tr><td>'+esc(c.nombre)+'</td><td>'+esc(c.tipo)+'</td><td class="num">'+mks.length+'</td>'+
+      '<td class="num">'+markupBadge(avg)+'</td><td class="num" style="color:var(--gris)">'+pct(avgMg)+'</td></tr>';
+  }).join("");
+  document.getElementById("tabla-comercios").innerHTML = state.comercios.length?
+    '<table><thead><tr><th>Comercio</th><th>Tipo</th><th class="num"># prod.</th><th class="num">Markup prom.</th><th class="num">Margen prom.</th></tr></thead><tbody>'+comRows+'</tbody></table>'
+    : '<div class="vacio">Cargá comercios para ver esta tabla.</div>';
+}
+function kpi(v,l,cls){ return '<div class="kpi'+(cls?" "+cls:"")+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+/* ============ EXPORT ============ */
+function exportCSV(){
+  var merma=(state.cfg.merma||0)/100, margen=(state.cfg.margen||0)/100;
+  var lines=["Producto,Categoria,Feria,MarkupZonaProm,Min,Max,MiSugerido,MiMarkup"];
+  state.productos.forEach(function(p){
+    var mks=[];
+    state.comercios.forEach(function(c){ var pr=latestPrecio(c.id,p.id); if(pr!==null&&p.feria>0) mks.push(pr/p.feria-1); });
+    var avg=mks.length?mks.reduce(function(a,b){return a+b;},0)/mks.length:"";
+    var mn=mks.length?Math.min.apply(null,mks):"", mx=mks.length?Math.max.apply(null,mks):"";
+    var sug=(p.feria>0)?p.feria/(1-merma)/(1-margen):"";
+    var miMk=(sug&&p.feria>0)?sug/p.feria-1:"";
+    lines.push([csvq(p.nombre),(CATS[p.cat]||{}).label||p.cat,p.feria,avg,mn,mx,Math.round(sug),miMk].join(","));
+  });
+  download("margenes.csv", lines.join("\n"), "text/csv");
+}
+function csvq(s){ s=String(s); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function exportJSON(){ download("respaldo-auditor.json", JSON.stringify(state,null,2), "application/json"); }
+function importJSON(ev){
+  var f=ev.target.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var data=JSON.parse(r.result);
+      if(!data.productos||!data.comercios){ alert("Archivo no válido."); return; }
+      if(!data.cfg) data.cfg={merma:12,margen:42};
+      state=data; save(); renderAll(); alert("Datos importados.");
+    }catch(e){ alert("No se pudo leer el archivo."); }
+  };
+  r.readAsText(f);
+}
+function download(name,content,type){
+  var blob=new Blob([content],{type:type});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+function borrarTodo(){
+  if(!confirm("Esto borra TODOS los datos (nube y este dispositivo). Seguro?")) return;
+  if(!confirm("Última confirmación: no se puede deshacer.")) return;
+  state={productos:[],comercios:[],relevamientos:[],cfg:{merma:12,margen:42}};
+  save(); renderAll(); alert("Listo, todo borrado.");
+}
+
+/* ============ INIT ============ */
+function renderAll(){ renderFeria(); renderComercios(); fillComercioSelect(); renderRelevGrid(); renderAnalisis(); }
+buildNav();
+renderAll();
+go("feria");
+initAuth();
+</script>
+</body>
+</html>
