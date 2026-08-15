@@ -42,6 +42,9 @@
   button.mini{padding:4px 9px;font-size:12px;border-radius:6px;background:none;border:1px solid var(--gris-claro);
     color:var(--gris);cursor:pointer;font-family:inherit}
   button.mini.del{color:var(--rojo);border-color:#e7c9c1}
+  button.chip{padding:7px 13px;border-radius:20px;font-size:13px;font-weight:600;background:var(--papel);
+    border:1px solid var(--gris-claro);color:var(--gris);cursor:pointer;font-family:inherit;margin:0 6px 6px 0}
+  button.chip.activo{background:var(--verde);color:#fff;border-color:var(--verde)}
   table{width:100%;border-collapse:collapse;font-size:13px}
   .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
   th,td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--gris-claro);white-space:nowrap}
@@ -53,7 +56,7 @@
   .pill.delicada{background:#f6e3de;color:var(--rojo)}
   .pill.fruta{background:var(--ambar-claro);color:var(--ambar)}
   .pill.seco{background:#e9e6f2;color:#5a4b8a}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px}
   .kpi{background:var(--papel);border:1px solid var(--gris-claro);border-radius:10px;padding:12px}
   .kpi .v{font-size:22px;font-weight:700;color:var(--verde)}
   .kpi.ambar .v{color:var(--ambar)}
@@ -65,7 +68,8 @@
   .row-act{display:flex;gap:6px;justify-content:flex-end}
   details summary{cursor:pointer;font-size:13px;color:var(--verde);font-weight:600;padding:6px 0}
   .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .hint{font-size:12px;color:var(--gris);margin-top:4px}
+  .over-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .hint{font-size:12px;color:var(--gris);margin-top:6px}
   footer{padding:20px 16px;text-align:center;font-size:11px;color:var(--gris)}
   /* LOGIN */
   #login-overlay{position:fixed;inset:0;background:var(--fondo);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -125,6 +129,10 @@
         <div style="display:flex;align-items:flex-end"><button class="accion" onclick="addProducto()" style="width:100%">Agregar producto</button></div>
       </div>
     </div>
+    <div class="card">
+      <label>Buscar producto</label>
+      <input id="feria-buscar" placeholder="Escribí para filtrar…" oninput="feriaQuery=this.value;renderFeria()">
+    </div>
     <div class="card scroll" id="lista-feria"></div>
   </section>
 
@@ -153,6 +161,9 @@
       <div class="fila dos">
         <div><label>Comercio</label><select id="r-comercio" onchange="renderRelevGrid()"></select></div>
         <div><label>Fecha</label><input id="r-fecha" type="date"></div>
+      </div>
+      <div class="card" style="margin:0 0 10px 0;padding:10px">
+        <input id="relev-buscar" placeholder="Buscar producto…" oninput="relevQuery=this.value;renderRelevGrid()">
       </div>
       <div id="relev-grid"></div>
       <div style="margin-top:12px"><button class="accion" onclick="guardarRelev()">Guardar precios</button></div>
@@ -186,6 +197,42 @@
     <button class="sec accion" onclick="exportCSV()">Descargar análisis (CSV)</button>
   </section>
 
+  <!-- LISTAS -->
+  <section class="tab" id="tab-listas">
+    <h2>Listas de precios</h2>
+    <p class="sub">Precio = feria + tu markup sobre costo. Cada lista tiene un markup por defecto y podés ajustarlo por categoría.</p>
+    <div class="card">
+      <div id="listas-botones"></div>
+    </div>
+    <div class="card" id="lista-editor"></div>
+    <div class="card">
+      <label>Buscar producto</label>
+      <input id="lista-buscar" placeholder="Escribí para filtrar…" oninput="listaQuery=this.value;renderListaTabla()">
+    </div>
+    <div class="card scroll" id="lista-tabla"></div>
+    <button class="sec accion" onclick="exportListaCSV()">Descargar esta lista (CSV)</button>
+  </section>
+
+  <!-- PEDIDO -->
+  <section class="tab" id="tab-pedido">
+    <h2>Pedido inicial (según feria)</h2>
+    <p class="sub">Cargá la cantidad de cada producto y te calcula la inversión. Las cantidades las ponés vos: la app no sabe tu rotación.</p>
+    <div class="card">
+      <div class="fila dos">
+        <button class="accion" onclick="plantillaPedido()">Cargar plantilla sugerida</button>
+        <button class="sec accion" onclick="limpiarPedido()">Limpiar cantidades</button>
+      </div>
+      <div class="hint">La plantilla es un punto de partida genérico para una mediana gourmet. Ajustá cada cantidad a tu realidad.</div>
+    </div>
+    <div class="card" id="pedido-totales"></div>
+    <div class="card">
+      <label>Buscar producto</label>
+      <input id="pedido-buscar" placeholder="Escribí para filtrar…" oninput="pedidoQuery=this.value;renderPedidoTabla()">
+    </div>
+    <div class="card scroll" id="pedido-tabla"></div>
+    <button class="sec accion" onclick="exportPedidoCSV()">Descargar pedido (CSV)</button>
+  </section>
+
   <!-- DATOS -->
   <section class="tab" id="tab-datos">
     <h2>Datos y cuenta</h2>
@@ -211,7 +258,7 @@
     </div>
   </section>
 </main>
-<footer>Auditor de Márgenes · Firebase + local · v2</footer>
+<footer>Auditor de Márgenes · Firebase + local · v3</footer>
 
 <!-- Firebase SDK (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -239,22 +286,43 @@ var CATS = {
   delicada:{label:"Delicada", cls:"delicada"},
   seco:{label:"Seco/Anexo", cls:"seco"}
 };
+var CAT_KEYS = ["staple","fruta","delicada","seco"];
 
-var state = loadLocal() || seed();
+/* buscadores (no se guardan) */
+var feriaQuery="", relevQuery="", listaQuery="", pedidoQuery="";
+var listaActivaId=null;
 
-/* ---- Persistencia local (cache offline) ---- */
+var state = migrate(loadLocal() || seed());
+if(state.listas && state.listas.length) listaActivaId = state.listas[0].id;
+
+function migrate(s){
+  if(!s) s={};
+  if(!s.productos) s.productos=[];
+  if(!s.comercios) s.comercios=[];
+  if(!s.relevamientos) s.relevamientos=[];
+  if(!s.cfg) s.cfg={merma:12,margen:42};
+  if(!s.listas){
+    s.listas=[
+      {id:uid(), nombre:"Minorista", markup:100, overrides:{staple:70,fruta:90,delicada:150,seco:80}},
+      {id:uid(), nombre:"Gastronómico", markup:35, overrides:{}}
+    ];
+  }
+  s.listas.forEach(function(l){ if(!l.overrides) l.overrides={}; });
+  if(!s.pedido) s.pedido={cantidades:{}};
+  if(!s.pedido.cantidades) s.pedido.cantidades={};
+  return s;
+}
+
+/* ---- Persistencia local ---- */
 function loadLocal(){
-  try {
-    var raw = localStorage.getItem("auditor_margenes_v2");
-    return raw ? JSON.parse(raw) : null;
-  } catch(e){ return null; }
+  try { var raw = localStorage.getItem("auditor_margenes_v2"); return raw ? JSON.parse(raw) : null; }
+  catch(e){ return null; }
 }
 function save(){
   try { localStorage.setItem("auditor_margenes_v2", JSON.stringify(state)); } catch(e){}
   cloudSave();
 }
-
-/* ---- Persistencia nube (Firestore) ---- */
+/* ---- Persistencia nube ---- */
 function cloudSave(){
   if(!docRef) return;
   var payload = JSON.stringify(state);
@@ -270,15 +338,18 @@ function startSync(){
     if(!snap.exists){ cloudSave(); return; }
     var d = snap.data();
     if(d && d.data && d.data !== lastWritten){
-      try { state = JSON.parse(d.data); lastWritten = d.data; renderAll(); } catch(e){}
+      try {
+        state = migrate(JSON.parse(d.data)); lastWritten = d.data;
+        if(!state.listas.some(function(l){return l.id===listaActivaId;})) listaActivaId = state.listas[0] ? state.listas[0].id : null;
+        renderAll();
+      } catch(e){}
     }
   }, function(err){ console.warn("snapshot:", err && err.code); });
 }
 
 /* ============ AUTH ============ */
 function initAuth(){
-  try { firebase.initializeApp(firebaseConfig); }
-  catch(e){ console.warn("init:", e); }
+  try { firebase.initializeApp(firebaseConfig); } catch(e){ console.warn("init:", e); }
   auth = firebase.auth();
   db = firebase.firestore();
   try { db.enablePersistence({synchronizeTabs:true}).catch(function(){}); } catch(e){}
@@ -307,14 +378,12 @@ function toggleModo(){
 }
 function entrar(){
   var e=document.getElementById("login-email").value.trim();
-  var p=document.getElementById("login-pass").value;
-  authErr("");
+  var p=document.getElementById("login-pass").value; authErr("");
   auth.signInWithEmailAndPassword(e,p).catch(function(err){ authErr(traducirAuth(err.code)); });
 }
 function crearCuenta(){
   var e=document.getElementById("login-email").value.trim();
-  var p=document.getElementById("login-pass").value;
-  authErr("");
+  var p=document.getElementById("login-pass").value; authErr("");
   if(p.length<6){ authErr("La contraseña necesita al menos 6 caracteres."); return; }
   auth.createUserWithEmailAndPassword(e,p).catch(function(err){ authErr(traducirAuth(err.code)); });
 }
@@ -373,9 +442,10 @@ var nf = new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumF
 function money(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : nf.format(n); }
 function pct(n){ return (n===null||n===undefined||isNaN(n)) ? "—" : (n*100).toFixed(1)+"%"; }
 function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+function filtrar(prods, q){ q=(q||"").toLowerCase(); return prods.filter(function(p){ return (p.nombre||"").toLowerCase().indexOf(q)>=0; }); }
 
 /* ============ NAV ============ */
-var TABS=[["feria","Feria"],["comercios","Comercios"],["relev","Relevar"],["analisis","Márgenes"],["datos","Datos"]];
+var TABS=[["feria","Feria"],["comercios","Comercios"],["relev","Relevar"],["analisis","Márgenes"],["listas","Listas"],["pedido","Pedido"],["datos","Datos"]];
 function buildNav(){
   var n=document.getElementById("nav"); n.innerHTML="";
   TABS.forEach(function(t,i){
@@ -392,6 +462,8 @@ function go(tab){
   document.querySelectorAll("#nav button").forEach(function(b){b.classList.toggle("activo", b.dataset.tab===tab);});
   if(tab==="relev"){ fillComercioSelect(); renderRelevGrid(); }
   if(tab==="analisis"){ renderAnalisis(); }
+  if(tab==="listas"){ renderListas(); }
+  if(tab==="pedido"){ renderPedido(); }
   window.scrollTo(0,0);
 }
 
@@ -400,30 +472,25 @@ function addProducto(){
   var nombre=document.getElementById("p-nombre").value.trim();
   var feria=parseFloat(document.getElementById("p-feria").value);
   if(!nombre){ alert("Poné un nombre de producto."); return; }
-  state.productos.push({
-    id:uid(), nombre:nombre,
-    cat:document.getElementById("p-cat").value,
-    unidad:document.getElementById("p-unidad").value,
-    feria:isNaN(feria)?0:feria
-  });
-  document.getElementById("p-nombre").value="";
-  document.getElementById("p-feria").value="";
+  state.productos.push({ id:uid(), nombre:nombre, cat:document.getElementById("p-cat").value,
+    unidad:document.getElementById("p-unidad").value, feria:isNaN(feria)?0:feria });
+  document.getElementById("p-nombre").value=""; document.getElementById("p-feria").value="";
   save(); renderFeria();
 }
-function editFeria(id,val){
-  var p=state.productos.find(function(x){return x.id===id;});
-  if(p){ p.feria=parseFloat(val)||0; save(); }
-}
+function editFeria(id,val){ var p=state.productos.find(function(x){return x.id===id;}); if(p){ p.feria=parseFloat(val)||0; save(); } }
 function delProducto(id){
   if(!confirm("Borrar este producto y sus relevamientos?")) return;
   state.productos=state.productos.filter(function(x){return x.id!==id;});
   state.relevamientos=state.relevamientos.filter(function(x){return x.productoId!==id;});
+  delete state.pedido.cantidades[id];
   save(); renderFeria();
 }
 function renderFeria(){
   var c=document.getElementById("lista-feria");
+  var prods=filtrar(state.productos, feriaQuery);
   if(!state.productos.length){ c.innerHTML='<div class="vacio">Todavía no cargaste productos.</div>'; return; }
-  var rows=state.productos.map(function(p){
+  if(!prods.length){ c.innerHTML='<div class="vacio">Sin resultados para "'+esc(feriaQuery)+'".</div>'; return; }
+  var rows=prods.map(function(p){
     var cat=CATS[p.cat]||CATS.staple;
     return '<tr>'+
       '<td>'+esc(p.nombre)+'</td>'+
@@ -463,19 +530,19 @@ function renderComercios(){
 
 /* ============ RELEVAMIENTO ============ */
 function fillComercioSelect(){
-  var s=document.getElementById("r-comercio");
-  var prev=s.value;
+  var s=document.getElementById("r-comercio"); var prev=s.value;
   s.innerHTML=state.comercios.map(function(c){return '<option value="'+c.id+'">'+esc(c.nombre)+'</option>';}).join("");
   if(prev) s.value=prev;
-  var f=document.getElementById("r-fecha");
-  if(!f.value) f.value=new Date().toISOString().slice(0,10);
+  var f=document.getElementById("r-fecha"); if(!f.value) f.value=new Date().toISOString().slice(0,10);
 }
 function renderRelevGrid(){
   var g=document.getElementById("relev-grid");
   var comId=document.getElementById("r-comercio").value;
   if(!state.comercios.length){ g.innerHTML='<div class="vacio">Primero cargá comercios.</div>'; return; }
   if(!state.productos.length){ g.innerHTML='<div class="vacio">Primero cargá productos en la pestaña Feria.</div>'; return; }
-  var rows=state.productos.map(function(p){
+  var prods=filtrar(state.productos, relevQuery);
+  if(!prods.length){ g.innerHTML='<div class="vacio">Sin resultados.</div>'; return; }
+  var rows=prods.map(function(p){
     var existente=state.relevamientos.filter(function(r){return r.comercioId===comId && r.productoId===p.id;})
       .sort(function(a,b){return (b.fecha||"").localeCompare(a.fecha||"");})[0];
     var val=existente?existente.precio:"";
@@ -493,18 +560,11 @@ function guardarRelev(){
   var inputs=document.querySelectorAll("#relev-grid input[data-prod]");
   var n=0;
   inputs.forEach(function(inp){
-    var prodId=inp.dataset.prod;
-    var v=parseFloat(inp.value);
-    state.relevamientos=state.relevamientos.filter(function(r){
-      return !(r.comercioId===comId && r.productoId===prodId && r.fecha===fecha);
-    });
-    if(!isNaN(v) && v>0){
-      state.relevamientos.push({id:uid(),comercioId:comId,productoId:prodId,precio:v,fecha:fecha});
-      n++;
-    }
+    var prodId=inp.dataset.prod; var v=parseFloat(inp.value);
+    state.relevamientos=state.relevamientos.filter(function(r){ return !(r.comercioId===comId && r.productoId===prodId && r.fecha===fecha); });
+    if(!isNaN(v) && v>0){ state.relevamientos.push({id:uid(),comercioId:comId,productoId:prodId,precio:v,fecha:fecha}); n++; }
   });
-  save();
-  alert(n+" precio(s) guardado(s).");
+  save(); alert(n+" precio(s) guardado(s).");
 }
 
 /* ============ ANALISIS ============ */
@@ -527,15 +587,12 @@ function renderAnalisis(){
   document.getElementById("cfg-merma").value=state.cfg.merma;
   document.getElementById("cfg-margen").value=state.cfg.margen;
   var merma=(state.cfg.merma||0)/100, margen=(state.cfg.margen||0)/100;
-
-  var sinFeria=0;
-  var allMarkups=[];
+  var sinFeria=0, allMarkups=[];
   var prodRows=state.productos.map(function(p){
     var precios=state.comercios.map(function(c){return latestPrecio(c.id,p.id);}).filter(function(x){return x!==null;});
     var markups=[];
-    if(p.feria>0){
-      precios.forEach(function(pr){ markups.push(pr/p.feria-1); });
-    } else if(precios.length){ sinFeria++; }
+    if(p.feria>0){ precios.forEach(function(pr){ markups.push(pr/p.feria-1); }); }
+    else if(precios.length){ sinFeria++; }
     markups.forEach(function(m){allMarkups.push(m);});
     var avgMk = markups.length? markups.reduce(function(a,b){return a+b;},0)/markups.length : null;
     var minMk = markups.length? Math.min.apply(null,markups):null;
@@ -553,31 +610,19 @@ function renderAnalisis(){
         '<td class="num">'+(miMk!==null?pct(miMk):"—")+'</td>'+
       '</tr>';
   });
-
   var avgZona = allMarkups.length? allMarkups.reduce(function(a,b){return a+b;},0)/allMarkups.length : null;
   var avgMargenZona = allMarkups.length? allMarkups.reduce(function(a,b){return a+(b/(1+b));},0)/allMarkups.length : null;
   document.getElementById("kpis").innerHTML=
-    kpi(pct(avgZona),"Markup prom. zona")+
-    kpi(pct(avgMargenZona),"Margen prom. zona","ambar")+
-    kpi(state.productos.length,"Productos")+
-    kpi(state.comercios.length,"Comercios");
-
+    kpi(pct(avgZona),"Markup prom. zona")+kpi(pct(avgMargenZona),"Margen prom. zona","ambar")+
+    kpi(state.productos.length,"Productos")+kpi(state.comercios.length,"Comercios");
   document.getElementById("aviso-feria").innerHTML = sinFeria?
     '<div class="aviso">'+sinFeria+' producto(s) tienen precio de comercio pero les falta el precio de feria: no se les puede calcular markup. Cargalo en la pestaña Feria.</div>':"";
-
   document.getElementById("tabla-productos").innerHTML = state.productos.length?
     '<table><thead><tr><th>Producto</th><th>Cat.</th><th class="num">Feria</th><th class="num">Markup zona</th><th class="num">Rango</th><th class="num">Mi sugerido</th><th class="num">Mi markup</th></tr></thead><tbody>'+
-    prodRows.join("")+'</tbody></table>'
-    : '<div class="vacio">Cargá productos y relevamientos para ver el análisis.</div>';
-
+    prodRows.join("")+'</tbody></table>' : '<div class="vacio">Cargá productos y relevamientos para ver el análisis.</div>';
   var comRows=state.comercios.map(function(c){
     var mks=[];
-    state.productos.forEach(function(p){
-      if(p.feria>0){
-        var pr=latestPrecio(c.id,p.id);
-        if(pr!==null) mks.push(pr/p.feria-1);
-      }
-    });
+    state.productos.forEach(function(p){ if(p.feria>0){ var pr=latestPrecio(c.id,p.id); if(pr!==null) mks.push(pr/p.feria-1); } });
     var avg=mks.length?mks.reduce(function(a,b){return a+b;},0)/mks.length:null;
     var avgMg=mks.length?mks.reduce(function(a,b){return a+(b/(1+b));},0)/mks.length:null;
     return '<tr><td>'+esc(c.nombre)+'</td><td>'+esc(c.tipo)+'</td><td class="num">'+mks.length+'</td>'+
@@ -589,7 +634,161 @@ function renderAnalisis(){
 }
 function kpi(v,l,cls){ return '<div class="kpi'+(cls?" "+cls:"")+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
 
-/* ============ EXPORT ============ */
+/* ============ LISTAS DE PRECIOS ============ */
+function listaActual(){
+  var l=state.listas.find(function(x){return x.id===listaActivaId;});
+  if(!l){ l=state.listas[0]; listaActivaId=l?l.id:null; }
+  return l;
+}
+function seleccionarLista(id){ listaActivaId=id; renderListas(); }
+function nuevaLista(){
+  var l={id:uid(), nombre:"Lista "+(state.listas.length+1), markup:50, overrides:{}};
+  state.listas.push(l); listaActivaId=l.id; save(); renderListas();
+}
+function borrarLista(){
+  if(state.listas.length<=1){ alert("Tenés que tener al menos una lista."); return; }
+  if(!confirm("Borrar esta lista?")) return;
+  state.listas=state.listas.filter(function(x){return x.id!==listaActivaId;});
+  listaActivaId=state.listas[0].id; save(); renderListas();
+}
+function setListaNombre(v){ listaActual().nombre=v; save(); renderListaBotones(); }
+function setListaMarkup(v){ listaActual().markup=parseFloat(v)||0; save(); renderListaTabla(); }
+function setOverride(catKey,v){
+  var l=listaActual();
+  if(v===""||isNaN(parseFloat(v))) delete l.overrides[catKey];
+  else l.overrides[catKey]=parseFloat(v);
+  save(); renderListaTabla();
+}
+function mkAplicado(p, lista){
+  var ov = lista.overrides ? lista.overrides[p.cat] : undefined;
+  if(ov!==undefined && ov!==null && ov!=="" && !isNaN(ov)) return Number(ov);
+  return Number(lista.markup)||0;
+}
+function renderListas(){ renderListaBotones(); renderListaEditor(); renderListaTabla(); }
+function renderListaBotones(){
+  var c=document.getElementById("listas-botones");
+  var btns=state.listas.map(function(l){
+    return '<button class="chip'+(l.id===listaActivaId?" activo":"")+'" onclick="seleccionarLista(\''+l.id+'\')">'+esc(l.nombre)+'</button>';
+  }).join("");
+  c.innerHTML=btns+'<button class="chip" onclick="nuevaLista()">+ Nueva lista</button>';
+}
+function renderListaEditor(){
+  var l=listaActual(); if(!l){ document.getElementById("lista-editor").innerHTML=""; return; }
+  var overs=CAT_KEYS.map(function(k){
+    var v=(l.overrides && l.overrides[k]!==undefined)? l.overrides[k] : "";
+    var ph="def "+((Number(l.markup)||0))+"%";
+    return '<div><label>'+CATS[k].label+'</label>'+
+      '<input type="number" inputmode="decimal" value="'+v+'" placeholder="'+ph+'" onchange="setOverride(\''+k+'\',this.value)"></div>';
+  }).join("");
+  document.getElementById("lista-editor").innerHTML=
+    '<div class="fila dos">'+
+      '<div><label>Nombre de la lista</label><input value="'+esc(l.nombre)+'" onchange="setListaNombre(this.value)"></div>'+
+      '<div><label>Markup por defecto (% sobre feria)</label><input type="number" inputmode="decimal" value="'+(l.markup||0)+'" onchange="setListaMarkup(this.value)"></div>'+
+    '</div>'+
+    '<label style="margin-top:6px">Ajuste por categoría (opcional, vacío = usa el default)</label>'+
+    '<div class="over-grid">'+overs+'</div>'+
+    '<div style="margin-top:12px"><button class="mini del" onclick="borrarLista()">Borrar esta lista</button></div>';
+}
+function renderListaTabla(){
+  var l=listaActual(); var cont=document.getElementById("lista-tabla");
+  if(!l){ cont.innerHTML=""; return; }
+  var prods=filtrar(state.productos, listaQuery);
+  if(!state.productos.length){ cont.innerHTML='<div class="vacio">Cargá productos en Feria primero.</div>'; return; }
+  if(!prods.length){ cont.innerHTML='<div class="vacio">Sin resultados.</div>'; return; }
+  var rows=prods.map(function(p){
+    var cat=CATS[p.cat]||CATS.staple;
+    var mk=mkAplicado(p,l);
+    var precio=(p.feria>0)? p.feria*(1+mk/100) : null;
+    var margen=(mk!==null)? (mk/100)/(1+mk/100) : null;
+    return '<tr>'+
+      '<td>'+esc(p.nombre)+'</td>'+
+      '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
+      '<td class="num" style="color:var(--gris)">'+money(p.feria)+'</td>'+
+      '<td class="num">'+mk.toFixed(0)+'%</td>'+
+      '<td class="num"><strong>'+money(precio)+'</strong></td>'+
+      '<td class="num" style="color:var(--gris)">'+pct(margen)+'</td>'+
+    '</tr>';
+  }).join("");
+  cont.innerHTML='<table><thead><tr><th>Producto</th><th>Cat.</th><th class="num">Feria</th><th class="num">Markup</th><th class="num">Precio venta</th><th class="num">Margen s/venta</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function exportListaCSV(){
+  var l=listaActual(); if(!l) return;
+  var lines=["Lista: "+l.nombre, "Producto,Categoria,Feria,Markup%,PrecioVenta,MargenSVenta%"];
+  state.productos.forEach(function(p){
+    var mk=mkAplicado(p,l); var precio=(p.feria>0)?p.feria*(1+mk/100):"";
+    var margen=(mk/100)/(1+mk/100);
+    lines.push([csvq(p.nombre),(CATS[p.cat]||{}).label||p.cat,p.feria,mk,Math.round(precio),(margen*100).toFixed(1)].join(","));
+  });
+  download("lista-"+l.nombre.replace(/\s+/g,"_")+".csv", lines.join("\n"), "text/csv");
+}
+
+/* ============ PEDIDO INICIAL ============ */
+function setCantidad(id,val){
+  var v=parseFloat(val);
+  if(isNaN(v)||v<=0) delete state.pedido.cantidades[id];
+  else state.pedido.cantidades[id]=v;
+  var p=state.productos.find(function(x){return x.id===id;});
+  var sub=document.getElementById("sub-"+id);
+  if(sub) sub.textContent = money((p&&p.feria>0&&state.pedido.cantidades[id])? p.feria*state.pedido.cantidades[id] : 0);
+  updatePedidoTotales(); save();
+}
+function plantillaPedido(){
+  if(!confirm("Esto carga cantidades sugeridas genéricas (punto de partida). ¿Continuar?")) return;
+  var def={staple:20, fruta:15, delicada:10, seco:6};
+  state.productos.forEach(function(p){ state.pedido.cantidades[p.id]= def[p.cat]||10; });
+  save(); renderPedido();
+}
+function limpiarPedido(){ if(!confirm("¿Vaciar todas las cantidades?")) return; state.pedido.cantidades={}; save(); renderPedido(); }
+function renderPedido(){ renderPedidoTabla(); updatePedidoTotales(); }
+function renderPedidoTabla(){
+  var cont=document.getElementById("pedido-tabla");
+  var prods=filtrar(state.productos, pedidoQuery);
+  if(!state.productos.length){ cont.innerHTML='<div class="vacio">Cargá productos en Feria primero.</div>'; return; }
+  if(!prods.length){ cont.innerHTML='<div class="vacio">Sin resultados.</div>'; return; }
+  var cant=state.pedido.cantidades||{};
+  var rows=prods.map(function(p){
+    var cat=CATS[p.cat]||CATS.staple;
+    var q=cant[p.id]||"";
+    var sub=(p.feria>0 && cant[p.id])? p.feria*cant[p.id] : 0;
+    return '<tr>'+
+      '<td>'+esc(p.nombre)+'</td>'+
+      '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
+      '<td class="num" style="color:var(--gris)">'+money(p.feria)+'</td>'+
+      '<td class="num"><input type="number" inputmode="decimal" value="'+q+'" placeholder="0" style="width:80px;text-align:right" oninput="setCantidad(\''+p.id+'\',this.value)"> '+esc(p.unidad||"")+'</td>'+
+      '<td class="num" id="sub-'+p.id+'">'+money(sub)+'</td>'+
+    '</tr>';
+  }).join("");
+  cont.innerHTML='<table><thead><tr><th>Producto</th><th>Cat.</th><th class="num">Feria</th><th class="num">Cantidad</th><th class="num">Subtotal</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function updatePedidoTotales(){
+  var cant=state.pedido.cantidades||{};
+  var total=0, fresco=0, seco=0;
+  state.productos.forEach(function(p){
+    var q=cant[p.id]; if(!q||!(p.feria>0)) return;
+    var sub=p.feria*q; total+=sub;
+    if(p.cat==="seco") seco+=sub; else fresco+=sub;
+  });
+  var pFresco = total? (fresco/total*100):0;
+  document.getElementById("pedido-totales").innerHTML=
+    '<div class="kpis">'+
+      kpi(money(total),"Inversión total")+
+      kpi(money(fresco),"Fresco","ambar")+
+      kpi(money(seco),"Seco / anexo")+
+      kpi(pFresco.toFixed(0)+"%","Fresco del total")+
+    '</div>'+
+    '<div class="hint">Fresco alto = más capital en producto que se pudre antes de venderse. Para abrir conviene fresco chico y de alta rotación, con el peso de la plata en secos, que no caducan.</div>';
+}
+function exportPedidoCSV(){
+  var cant=state.pedido.cantidades||{};
+  var lines=["Producto,Categoria,Unidad,Feria,Cantidad,Subtotal"];
+  state.productos.forEach(function(p){
+    var q=cant[p.id]||0; var sub=(p.feria>0)?p.feria*q:0;
+    if(q>0) lines.push([csvq(p.nombre),(CATS[p.cat]||{}).label||p.cat,p.unidad||"",p.feria,q,Math.round(sub)].join(","));
+  });
+  download("pedido-inicial.csv", lines.join("\n"), "text/csv");
+}
+
+/* ============ EXPORT / DATOS ============ */
 function exportCSV(){
   var merma=(state.cfg.merma||0)/100, margen=(state.cfg.margen||0)/100;
   var lines=["Producto,Categoria,Feria,MarkupZonaProm,Min,Max,MiSugerido,MiMarkup"];
@@ -613,27 +812,28 @@ function importJSON(ev){
     try{
       var data=JSON.parse(r.result);
       if(!data.productos||!data.comercios){ alert("Archivo no válido."); return; }
-      if(!data.cfg) data.cfg={merma:12,margen:42};
-      state=data; save(); renderAll(); alert("Datos importados.");
+      state=migrate(data); listaActivaId=state.listas[0]?state.listas[0].id:null; save(); renderAll(); alert("Datos importados.");
     }catch(e){ alert("No se pudo leer el archivo."); }
   };
   r.readAsText(f);
 }
 function download(name,content,type){
   var blob=new Blob([content],{type:type});
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
 }
 function borrarTodo(){
   if(!confirm("Esto borra TODOS los datos (nube y este dispositivo). Seguro?")) return;
   if(!confirm("Última confirmación: no se puede deshacer.")) return;
-  state={productos:[],comercios:[],relevamientos:[],cfg:{merma:12,margen:42}};
+  state=migrate({}); listaActivaId=state.listas[0].id;
   save(); renderAll(); alert("Listo, todo borrado.");
 }
 
 /* ============ INIT ============ */
-function renderAll(){ renderFeria(); renderComercios(); fillComercioSelect(); renderRelevGrid(); renderAnalisis(); }
+function renderAll(){
+  renderFeria(); renderComercios(); fillComercioSelect(); renderRelevGrid();
+  renderAnalisis(); renderListas(); renderPedido();
+}
 buildNav();
 renderAll();
 go("feria");
