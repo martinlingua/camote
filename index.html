@@ -478,6 +478,9 @@ function addProducto(){
   save(); renderFeria();
 }
 function editFeria(id,val){ var p=state.productos.find(function(x){return x.id===id;}); if(p){ p.feria=parseFloat(val)||0; save(); } }
+function editNombre(id,val){ var p=state.productos.find(function(x){return x.id===id;}); if(p){ p.nombre=val.trim()||p.nombre; save(); } }
+function editCat(id,val){ var p=state.productos.find(function(x){return x.id===id;}); if(p && CATS[val]){ p.cat=val; save(); renderFeria(); } }
+function editUnidad(id,val){ var p=state.productos.find(function(x){return x.id===id;}); if(p){ p.unidad=val; save(); } }
 function delProducto(id){
   if(!confirm("Borrar este producto y sus relevamientos?")) return;
   state.productos=state.productos.filter(function(x){return x.id!==id;});
@@ -490,12 +493,15 @@ function renderFeria(){
   var prods=filtrar(state.productos, feriaQuery);
   if(!state.productos.length){ c.innerHTML='<div class="vacio">Todavía no cargaste productos.</div>'; return; }
   if(!prods.length){ c.innerHTML='<div class="vacio">Sin resultados para "'+esc(feriaQuery)+'".</div>'; return; }
+  var unidades=["kg","unidad","atado","docena","litro"];
   var rows=prods.map(function(p){
-    var cat=CATS[p.cat]||CATS.staple;
+    var catOpts=CAT_KEYS.map(function(k){ return '<option value="'+k+'"'+(p.cat===k?" selected":"")+'>'+CATS[k].label+'</option>'; }).join("");
+    var uniOpts=unidades.map(function(u){ return '<option'+(p.unidad===u?" selected":"")+'>'+u+'</option>'; }).join("");
+    if(unidades.indexOf(p.unidad)<0 && p.unidad){ uniOpts='<option selected>'+esc(p.unidad)+'</option>'+uniOpts; }
     return '<tr>'+
-      '<td>'+esc(p.nombre)+'</td>'+
-      '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
-      '<td>'+esc(p.unidad)+'</td>'+
+      '<td><input value="'+esc(p.nombre)+'" style="min-width:150px" onchange="editNombre(\''+p.id+'\',this.value)"></td>'+
+      '<td><select onchange="editCat(\''+p.id+'\',this.value)">'+catOpts+'</select></td>'+
+      '<td><select onchange="editUnidad(\''+p.id+'\',this.value)">'+uniOpts+'</select></td>'+
       '<td class="num"><input type="number" inputmode="decimal" value="'+(p.feria||"")+'" style="width:100px;text-align:right" onchange="editFeria(\''+p.id+'\',this.value)"></td>'+
       '<td class="row-act"><button class="mini del" onclick="delProducto(\''+p.id+'\')">Borrar</button></td>'+
     '</tr>';
