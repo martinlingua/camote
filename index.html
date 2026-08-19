@@ -114,7 +114,7 @@
         <div><label>Producto</label><input id="p-nombre" placeholder="Ej: Manzana Red comun"></div>
         <div><label>Categoría</label>
           <select id="p-cat">
-            <option value="staple">Staple (papa, cebolla)</option>
+            <option value="staple">Genérico (papa, cebolla)</option>
             <option value="fruta">Fruta media (manzana, cítrico)</option>
             <option value="delicada">Delicada (hoja verde, fruta madura)</option>
             <option value="seco">Seco / Anexo (aceite, nuez, conserva)</option>
@@ -195,6 +195,33 @@
     <div class="card scroll" id="tabla-comercios"></div>
 
     <button class="sec accion" onclick="exportCSV()">Descargar análisis (CSV)</button>
+  </section>
+
+  <!-- COMPARATIVA -->
+  <section class="tab" id="tab-comparativa">
+    <h2>Comparativa por local</h2>
+    <p class="sub">Marcación de cada comercio vs feria, producto por producto, con el promedio de cada local.</p>
+    <h2 style="margin-top:6px">Todos los locales</h2>
+    <p class="sub">Ordenados por markup promedio. Mirá la columna "# prod." antes de comparar promedios.</p>
+    <div class="card scroll" id="comp-resumen"></div>
+    <h2>Detalle de un local</h2>
+    <div class="card"><div id="comp-chips"></div></div>
+    <div class="card" id="comp-kpis"></div>
+    <div class="card">
+      <label>Buscar producto</label>
+      <input id="comp-buscar" placeholder="Escribí para filtrar…" oninput="comparativaQuery=this.value;renderComparativaDetalle()">
+    </div>
+    <div class="card scroll" id="comp-tabla"></div>
+    <button class="sec accion" onclick="exportComparativaCSV()">Descargar detalle del local (CSV)</button>
+
+    <h2 style="margin-top:8px">Mismo producto entre locales</h2>
+    <p class="sub">Cada fila es un producto; cada columna, un local. El valor es la marcación (markup vs feria). En verde, el local más barato de esa fila.</p>
+    <div class="card">
+      <label>Buscar producto</label>
+      <input id="matriz-buscar" placeholder="Escribí para filtrar…" oninput="matrizQuery=this.value;renderMatriz()">
+    </div>
+    <div class="card scroll" id="comp-matriz"></div>
+    <button class="sec accion" onclick="exportMatrizCSV()">Descargar matriz (CSV)</button>
   </section>
 
   <!-- LISTAS -->
@@ -281,7 +308,7 @@ var auth=null, db=null, currentUid=null, docRef=null, unsub=null, lastWritten=nu
 
 /* ============ ESTADO ============ */
 var CATS = {
-  staple:{label:"Staple", cls:"staple"},
+  staple:{label:"Genérico", cls:"staple"},
   fruta:{label:"Fruta media", cls:"fruta"},
   delicada:{label:"Delicada", cls:"delicada"},
   seco:{label:"Seco/Anexo", cls:"seco"}
@@ -289,8 +316,8 @@ var CATS = {
 var CAT_KEYS = ["staple","fruta","delicada","seco"];
 
 /* buscadores (no se guardan) */
-var feriaQuery="", relevQuery="", listaQuery="", pedidoQuery="";
-var listaActivaId=null;
+var feriaQuery="", relevQuery="", listaQuery="", pedidoQuery="", comparativaQuery="", matrizQuery="";
+var listaActivaId=null, comparativaComId=null;
 
 var state = migrate(loadLocal() || seed());
 if(state.listas && state.listas.length) listaActivaId = state.listas[0].id;
@@ -445,7 +472,7 @@ function esc(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {"&":
 function filtrar(prods, q){ q=(q||"").toLowerCase(); return prods.filter(function(p){ return (p.nombre||"").toLowerCase().indexOf(q)>=0; }); }
 
 /* ============ NAV ============ */
-var TABS=[["feria","Feria"],["comercios","Comercios"],["relev","Relevar"],["analisis","Márgenes"],["listas","Listas"],["pedido","Pedido"],["datos","Datos"]];
+var TABS=[["feria","Feria"],["comercios","Comercios"],["relev","Relevar"],["analisis","Márgenes"],["comparativa","Comparativa"],["listas","Listas"],["pedido","Pedido"],["datos","Datos"]];
 function buildNav(){
   var n=document.getElementById("nav"); n.innerHTML="";
   TABS.forEach(function(t,i){
@@ -462,6 +489,7 @@ function go(tab){
   document.querySelectorAll("#nav button").forEach(function(b){b.classList.toggle("activo", b.dataset.tab===tab);});
   if(tab==="relev"){ fillComercioSelect(); renderRelevGrid(); }
   if(tab==="analisis"){ renderAnalisis(); }
+  if(tab==="comparativa"){ renderComparativa(); }
   if(tab==="listas"){ renderListas(); }
   if(tab==="pedido"){ renderPedido(); }
   window.scrollTo(0,0);
@@ -639,6 +667,119 @@ function renderAnalisis(){
     : '<div class="vacio">Cargá comercios para ver esta tabla.</div>';
 }
 function kpi(v,l,cls){ return '<div class="kpi'+(cls?" "+cls:"")+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>'; }
+
+/* ============ COMPARATIVA POR LOCAL ============ */
+function comercioRows(comId){
+  var out=[];
+  state.productos.forEach(function(p){
+    if(!(p.feria>0)) return;
+    var pr=latestPrecio(comId,p.id);
+    if(pr===null) return;
+    out.push({p:p, precio:pr, markup:pr/p.feria-1});
+  });
+  return out;
+}
+function promMarkup(rows){ return rows.length? rows.reduce(function(a,r){return a+r.markup;},0)/rows.length : null; }
+function promMargen(rows){ return rows.length? rows.reduce(function(a,r){return a+(r.markup/(1+r.markup));},0)/rows.length : null; }
+function seleccionarComparativa(id){ comparativaComId=id; renderComparativa(); window.scrollTo(0, document.getElementById("comp-chips").offsetTop-60); }
+function renderComparativa(){
+  if(!state.comercios.some(function(c){return c.id===comparativaComId;})) comparativaComId = state.comercios[0] ? state.comercios[0].id : null;
+  renderComparativaResumen(); renderComparativaChips(); renderComparativaDetalle(); renderMatriz();
+}
+function renderMatriz(){
+  var cont=document.getElementById("comp-matriz");
+  if(!state.comercios.length || !state.productos.length){ cont.innerHTML='<div class="vacio">Cargá comercios, productos y relevamientos.</div>'; return; }
+  var coms=state.comercios;
+  var prods=state.productos.filter(function(p){
+    return p.feria>0 && coms.some(function(c){ return latestPrecio(c.id,p.id)!==null; });
+  });
+  prods=prods.filter(function(p){ return (p.nombre||"").toLowerCase().indexOf((matrizQuery||"").toLowerCase())>=0; });
+  if(!prods.length){ cont.innerHTML='<div class="vacio">Sin productos relevados en más de un local (o sin resultados).</div>'; return; }
+  var head='<tr><th>Producto</th><th class="num">Feria</th>'+coms.map(function(c){return '<th class="num">'+esc(c.nombre)+'</th>';}).join("")+'</tr>';
+  var body=prods.map(function(p){
+    var mks=coms.map(function(c){ var pr=latestPrecio(c.id,p.id); return pr!==null? pr/p.feria-1 : null; });
+    var validos=mks.filter(function(x){return x!==null;});
+    var minMk=validos.length? Math.min.apply(null,validos):null;
+    var cells=mks.map(function(mk){
+      if(mk===null) return '<td class="num" style="color:var(--gris-claro)">—</td>';
+      var esMin=(minMk!==null && mk===minMk);
+      var bg=esMin?' style="background:var(--verde-claro)"':'';
+      return '<td class="num"'+bg+'>'+markupBadge(mk)+'</td>';
+    }).join("");
+    return '<tr><td>'+esc(p.nombre)+'</td><td class="num" style="color:var(--gris)">'+money(p.feria)+'</td>'+cells+'</tr>';
+  }).join("");
+  cont.innerHTML='<table><thead>'+head+'</thead><tbody>'+body+'</tbody></table>';
+}
+function exportMatrizCSV(){
+  var coms=state.comercios;
+  var prods=state.productos.filter(function(p){ return p.feria>0 && coms.some(function(c){ return latestPrecio(c.id,p.id)!==null; }); });
+  var lines=[["Producto","Feria"].concat(coms.map(function(c){return csvq(c.nombre);})).join(",")];
+  prods.forEach(function(p){
+    var cells=coms.map(function(c){ var pr=latestPrecio(c.id,p.id); return pr!==null? ((pr/p.feria-1)*100).toFixed(1) : ""; });
+    lines.push([csvq(p.nombre),p.feria].concat(cells).join(","));
+  });
+  download("matriz-locales.csv", lines.join("\n"), "text/csv");
+}
+function renderComparativaResumen(){
+  var cont=document.getElementById("comp-resumen");
+  if(!state.comercios.length){ cont.innerHTML='<div class="vacio">Cargá comercios y relevamientos primero.</div>'; return; }
+  var filas=state.comercios.map(function(c){
+    var rows=comercioRows(c.id);
+    return {c:c, n:rows.length, avg:promMarkup(rows), avgMg:promMargen(rows)};
+  }).sort(function(a,b){ return (b.avg===null?-1:b.avg)-(a.avg===null?-1:a.avg); });
+  var body=filas.map(function(f){
+    var sel=(f.c.id===comparativaComId)?' style="background:var(--verde-claro)"':'';
+    return '<tr'+sel+' onclick="seleccionarComparativa(\''+f.c.id+'\')" style="cursor:pointer">'+
+      '<td>'+esc(f.c.nombre)+'</td><td>'+esc(f.c.tipo)+'</td>'+
+      '<td class="num">'+f.n+'</td>'+
+      '<td class="num">'+markupBadge(f.avg)+'</td>'+
+      '<td class="num" style="color:var(--gris)">'+pct(f.avgMg)+'</td></tr>';
+  }).join("");
+  cont.innerHTML='<table><thead><tr><th>Comercio</th><th>Tipo</th><th class="num"># prod.</th><th class="num">Markup prom.</th><th class="num">Margen prom.</th></tr></thead><tbody>'+body+'</tbody></table>';
+}
+function renderComparativaChips(){
+  var c=document.getElementById("comp-chips");
+  if(!state.comercios.length){ c.innerHTML='<div class="hint">Sin comercios.</div>'; return; }
+  c.innerHTML=state.comercios.map(function(co){
+    return '<button class="chip'+(co.id===comparativaComId?" activo":"")+'" onclick="seleccionarComparativa(\''+co.id+'\')">'+esc(co.nombre)+'</button>';
+  }).join("");
+}
+function renderComparativaDetalle(){
+  var kpisEl=document.getElementById("comp-kpis"), tablaEl=document.getElementById("comp-tabla");
+  var co=state.comercios.find(function(x){return x.id===comparativaComId;});
+  if(!co){ kpisEl.innerHTML=""; tablaEl.innerHTML='<div class="vacio">Elegí un local.</div>'; return; }
+  var rows=comercioRows(co.id).sort(function(a,b){return b.markup-a.markup;});
+  kpisEl.innerHTML='<div class="kpis">'+
+    kpi(pct(promMarkup(rows)),"Markup prom. "+esc(co.nombre))+
+    kpi(pct(promMargen(rows)),"Margen prom.","ambar")+
+    kpi(rows.length,"Productos comparados")+'</div>';
+  var fRows=rows.filter(function(r){ return (r.p.nombre||"").toLowerCase().indexOf((comparativaQuery||"").toLowerCase())>=0; });
+  if(!rows.length){ tablaEl.innerHTML='<div class="vacio">Este local no tiene productos con feria + precio relevado.</div>'; return; }
+  if(!fRows.length){ tablaEl.innerHTML='<div class="vacio">Sin resultados.</div>'; return; }
+  var body=fRows.map(function(r){
+    var cat=CATS[r.p.cat]||CATS.staple;
+    var margen=r.markup/(1+r.markup);
+    return '<tr>'+
+      '<td>'+esc(r.p.nombre)+'</td>'+
+      '<td><span class="pill '+cat.cls+'">'+cat.label+'</span></td>'+
+      '<td class="num" style="color:var(--gris)">'+money(r.p.feria)+'</td>'+
+      '<td class="num">'+money(r.precio)+'</td>'+
+      '<td class="num">'+markupBadge(r.markup)+'</td>'+
+      '<td class="num" style="color:var(--gris)">'+pct(margen)+'</td>'+
+    '</tr>';
+  }).join("");
+  tablaEl.innerHTML='<table><thead><tr><th>Producto</th><th>Cat.</th><th class="num">Feria</th><th class="num">Precio local</th><th class="num">Markup</th><th class="num">Margen s/venta</th></tr></thead><tbody>'+body+'</tbody></table>';
+}
+function exportComparativaCSV(){
+  var co=state.comercios.find(function(x){return x.id===comparativaComId;});
+  if(!co){ return; }
+  var rows=comercioRows(co.id).sort(function(a,b){return b.markup-a.markup;});
+  var lines=["Local: "+co.nombre, "Producto,Categoria,Feria,PrecioLocal,Markup%,MargenSVenta%"];
+  rows.forEach(function(r){
+    lines.push([csvq(r.p.nombre),(CATS[r.p.cat]||{}).label||r.p.cat,r.p.feria,Math.round(r.precio),(r.markup*100).toFixed(1),((r.markup/(1+r.markup))*100).toFixed(1)].join(","));
+  });
+  download("comparativa-"+co.nombre.replace(/\s+/g,"_")+".csv", lines.join("\n"), "text/csv");
+}
 
 /* ============ LISTAS DE PRECIOS ============ */
 function listaActual(){
@@ -838,7 +979,7 @@ function borrarTodo(){
 /* ============ INIT ============ */
 function renderAll(){
   renderFeria(); renderComercios(); fillComercioSelect(); renderRelevGrid();
-  renderAnalisis(); renderListas(); renderPedido();
+  renderAnalisis(); renderComparativa(); renderListas(); renderPedido();
 }
 buildNav();
 renderAll();
